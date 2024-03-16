@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+set -eu
+
+#######################################
+# Function: Add color to output
+# Parameters:
+#   -n: Output with a newline
+#   -p: Disable prefixes like [INFO]
+#   $1: Color code (0~255) or specific string
+#   $2: String to be colored
+# Output:
+#   Colored string
+#######################################
+function print_usage() {
+    echo 'Usage:'
+    echo '    color_print -n -p [color] [message...]'
+    echo "    -n new line"
+    echo "    -p prefixed output"
+    echo '    [color] = 0~255 / info / warn / ok / error / tip / debug'
+    echo ''
+    echo "Examples:"
+    echo "    color_print info 'hello world!'"
+}
+
+#######################################
+# flags
+
+declare add_new_line='false'
+declare add_prefix='false'
+declare option
+while getopts nph option; do
+    case $option in
+        n) add_new_line='true' ;;
+        p) add_prefix='true' ;;
+        h) print_usage; exit 0; ;;
+        *) print_usage; exit 1; ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+#######################################
+# constants
+
+esc=$(printf "\033")    # Prefix used to change output color
+reset="${esc}[0m"       # Reset all color and font settings
+declare -r esc
+declare -r reset
+
+export ST_COLOR_INFO=33
+export ST_COLOR_WARN=190
+export ST_COLOR_OK=46
+export ST_COLOR_ERROR=196
+export ST_COLOR_TIP=215
+export ST_COLOR_DEBUG=141
+
+#######################################
+
+if [[ $# == 0 ]] || [[ $# == 1 && ! -p /dev/stdin ]]; then
+    echo "${esc}[1;38;5;9m[Error] Incorrect number of parameters.${esc}[m"
+    print_usage
+    exit 1;
+fi
+
+if [[ -p /dev/stdin ]]; then    # <-- make pipe work
+    str=$(cat -)                # <-- make pipe work
+else
+    str="${*:2}"
+fi
+declare -r str
+
+declare prefix=''
+declare color=''
+case $1 in
+'info')     # Blue
+    color=$ST_COLOR_INFO; prefix='[INFO] '; ;;
+'warn')     # Yellow
+    color=$ST_COLOR_WARN; prefix='[WARN] '; ;;
+'ok')       # Green
+    color=$ST_COLOR_OK; prefix='[OK] '; ;;
+'error')    # Red
+    color=$ST_COLOR_ERROR; prefix='[ERROR] '; ;;
+'tip')      # Orange
+    color=$ST_COLOR_TIP; prefix='[TIP] '; ;;
+'debug')    # Purple
+    color=$ST_COLOR_DEBUG; prefix='[debug] '; ;;
+*)
+    color=$1; ;;
+esac
+
+if [[ $add_prefix != 'true' ]]; then prefix=''; fi
+if [[ $add_new_line == 'true' ]]; then
+    echo "${esc}[38;5;${color}m${prefix}${str}${reset}"
+else
+    echo -n "${esc}[38;5;${color}m${prefix}${str}${reset}"
+fi

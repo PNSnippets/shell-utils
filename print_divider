@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -eu
+
+#######################################
+# Function: Output a separator line as long as the terminal window
+# Parameters:
+#   $1: 1-byte character to serve as the separator. Default is "="
+# Output:
+#   ==============
+#######################################
+function print_usage() {
+    echo 'Usage:'
+    echo '    count_down [character]'
+    echo ''
+    echo "Examples:"
+    echo "    count_down '~'"
+}
+
+#######################################
+# flags
+
+declare option
+while getopts h option; do
+    case $option in
+        h) print_usage; exit 0; ;;
+        *) print_usage; exit 1; ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+#######################################
+
+if [[ $# == 0 ]]; then
+    eval "printf '%.0s'= {1..$(tput cols)}"
+else
+    eval "printf '%.0s'$1 {1..$((  $(tput cols) / ${#1}  ))}"
+fi
+echo ''
